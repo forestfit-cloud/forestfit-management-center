@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>반품리스트 자동화 사이트 v5</title>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<script>
+if(typeof ExcelJS==='undefined'){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"><\/script>');}
+</script>
+<script>
+if(typeof ExcelJS==='undefined'){document.write('<script src="https://unpkg.com/exceljs@4.4.0/dist/exceljs.min.js"><\/script>');}
+</script>
+<style>
+  :root{
+    --bg:#f5f7f6;
+    --card:#ffffff;
+    --ink:#1d2b23;
+    --muted:#6e7c74;
+    --brand:#244734;
+    --brand2:#3f6a52;
+    --line:#dde5e0;
+    --soft:#eef4f0;
+    --yellow:#fff2cc;
+    --danger:#a33b32;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(135deg,#f7f3eb 0%,#edf3ef 100%);font-family:Pretendard,-apple-system,BlinkMacSystemFont,"Segoe UI","Malgun Gothic",sans-serif;color:var(--ink)}
+  .wrap{max-width:1100px;margin:0 auto;padding:46px 26px 70px}
+  .view{display:block}
+  .home-hero{min-height:calc(100vh - 150px);display:flex;flex-direction:column;justify-content:center}
+  .home-hero h1{font-size:36px;margin:0;letter-spacing:-.05em}
+  .home-hero p{margin:12px 0 30px;color:var(--muted);line-height:1.6}
+  .work-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;max-width:760px}
+  .work-card{display:flex;align-items:center;justify-content:space-between;gap:18px;background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:18px;padding:24px;text-decoration:none;color:var(--ink);box-shadow:0 12px 30px rgba(31,52,41,.06);transition:transform .15s ease,box-shadow .15s ease}
+  .work-card:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(31,52,41,.1)}
+  .work-card strong{font-size:18px}
+  .work-card span{color:var(--brand);font-size:24px}
+  .home-top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:22px}
+  .home-top h1{margin:0;font-size:28px;letter-spacing:-.04em}
+  @media(max-width:760px){.work-grid{grid-template-columns:1fr}.home-hero h1{font-size:29px}}
+  .head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:26px}
+  .head h1{margin:0;font-size:28px;letter-spacing:-.04em}
+  .head p{margin:9px 0 0;color:var(--muted);line-height:1.55;font-size:14px}
+  .badge{background:#fff;border:1px solid var(--line);border-radius:999px;padding:9px 13px;font-size:12px;color:var(--brand);font-weight:700;white-space:nowrap}
+  .card{background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 30px rgba(31,52,41,.06);padding:24px;margin-top:16px}
+  .card h2{font-size:18px;margin:0 0 18px}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+  .field{display:flex;flex-direction:column;gap:7px}
+  .field label{font-size:13px;font-weight:700}
+  input[type=date],input[type=file]{width:100%;border:1px solid var(--line);border-radius:11px;background:#fff;padding:12px 13px;font-size:14px;color:var(--ink)}
+  input[type=file]{padding:15px;background:#fafcfb}
+  .full{grid-column:1/-1}
+  .hint{font-size:12px;color:var(--muted);line-height:1.55}
+  .actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  button{border:0;border-radius:11px;padding:13px 18px;font-size:14px;font-weight:800;cursor:pointer}
+  .primary{background:var(--brand);color:#fff}
+  .secondary{background:var(--soft);color:var(--brand)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .status{margin-top:14px;padding:13px 15px;border-radius:11px;background:var(--soft);font-size:13px;line-height:1.6;display:none}
+  .status.error{display:block;background:#fff0ee;color:var(--danger);border:1px solid #f1cbc6}
+  .status.ok{display:block;background:#edf6f0;color:#27553c;border:1px solid #cfe3d5}
+  .summary{display:none}
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .kpi{border:1px solid var(--line);border-radius:13px;padding:14px;background:#fbfcfb}
+  .kpi .t{font-size:11px;color:var(--muted);margin-bottom:6px}
+  .kpi .v{font-size:20px;font-weight:850;letter-spacing:-.03em}
+  .kpi.wide{grid-column:span 2}
+  .manual{margin-top:16px;background:var(--yellow);border:1px solid #ead88c;border-radius:12px;padding:13px 15px;font-size:13px;line-height:1.65}
+  .filelist{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.65}
+  .save-ready{display:none;margin-top:14px;padding:16px;border:1px solid #b9d4c3;background:#f0f8f2;border-radius:12px}
+  .save-ready strong{display:block;margin-bottom:8px;font-size:14px}
+  .save-link{display:inline-block;background:var(--brand);color:#fff;text-decoration:none;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:800}
+  .save-help{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.55}
+  .footer{margin-top:18px;font-size:12px;color:var(--muted);line-height:1.65}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.kpi.wide{grid-column:span 2}.head{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section id="homeView" class="view home-hero">
+    <div class="home-top">
+      <div>
+        <h1>FOREST FIT 경영지원팀 업무 센터</h1>
+        <p>경영지원팀의 주요 업무를 한 곳에서 빠르게 시작하세요.</p>
+      </div>
+      <div class="badge">FOREST FIT · v5</div>
+    </div>
+    <div class="work-grid">
+      <a class="work-card" target="_blank" rel="noopener noreferrer" href="https://accounts.google.com/AccountChooser?continue=https%3A%2F%2Fdocs.google.com%2Fspreadsheets%2Fd%2F19XrXOVB8gPbHgJJLX7cPZGOkVOKvMMO0pBPXab-WdAI%2Fedit%3Fgid%3D751405673%23gid%3D751405673&service=wise">
+        <strong>점심 주문 관리</strong><span aria-hidden="true">↗</span>
+      </a>
+      <a class="work-card" href="#returnsView" id="openReturnsBtn">
+        <strong>반품리스트 제작</strong><span aria-hidden="true">→</span>
+      </a>
+    </div>
+  </section>
+
+  <section id="returnsView" class="view" style="display:none">
+  <div class="head">
+    <div>
+      <h1>반품리스트 자동화</h1>
+      <p>CS목록 CSV를 첨부하면 반품·교환 통합, 통계, 반품 1위 상품 분석, 오배송 시트까지 한 번에 생성합니다.</p>
+    </div>
+    <div class="badge">FOREST FIT · 경영지원팀</div>
+  </div>
+  <div class="actions" style="margin-top:0">
+    <button id="homeBtn" class="secondary" type="button">업무센터 홈으로</button>
+  </div>
+  <div class="card">
+    <h2>1. 기간 및 파일 설정</h2>
+    <div class="grid">
+      <div class="field">
+        <label for="reportDate">보고서 작성일</label>
+        <input id="reportDate" type="date" />
+      </div>
+      <div class="field">
+        <label>보고서 주차</label>
+        <input id="weekPreview" type="text" readonly style="border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:#f8faf9;color:#4a5d52" />
+      </div>
+      <div class="field">
+        <label for="csStart">CS 다운로드 기간 시작</label>
+        <input id="csStart" type="date" />
+      </div>
+      <div class="field">
+        <label for="csEnd">CS 다운로드 기간 종료</label>
+        <input id="csEnd" type="date" />
+      </div>
+      <div class="field">
+        <label for="shipStart">출고량 조회 기간 시작</label>
+        <input id="shipStart" type="date" />
+      </div>
+      <div class="field">
+        <label for="shipEnd">출고량 조회 기간 종료</label>
+        <input id="shipEnd" type="date" />
+      </div>
+      <div class="field full">
+        <label for="csvFiles">CS목록 CSV 첨부</label>
+        <input id="csvFiles" type="file" accept=".csv,text/csv" multiple />
+        <div class="hint">03.교환, 04.맞교환, 06.발송후반품 파일을 순서와 관계없이 첨부할 수 있습니다. 권장 2~3개.</div>
+        <div id="fileList" class="filelist"></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="analyzeBtn" class="primary">분석하기</button>
+      <button id="resetBtn" class="secondary">초기화</button>
+    </div>
+    <div id="status" class="status"></div>
+  </div>
+
+  <div id="summary" class="card summary">
+    <h2>2. 분석 결과</h2>
+    <div class="kpis">
+      <div class="kpi"><div class="t">총 CS 건수</div><div id="kTotal" class="v">-</div></div>
+      <div class="kpi"><div class="t">반품</div><div id="kReturn" class="v">-</div></div>
+      <div class="kpi"><div class="t">교환</div><div id="kExchange" class="v">-</div></div>
+      <div class="kpi"><div class="t">오배송</div><div id="kWrong" class="v">-</div></div>
+      <div class="kpi"><div class="t">중복 제거</div><div id="kDup" class="v">-</div></div>
+      <div class="kpi wide"><div class="t">반품 개수 1위 상품</div><div id="kTopProduct" class="v">-</div></div>
+      <div class="kpi"><div class="t">1위 상품 반품</div><div id="kTopCount" class="v">-</div></div>
+      <div class="kpi"><div class="t">제외된 미지원 CS</div><div id="kSkipped" class="v">-</div></div>
+    </div>
+    <div class="manual">
+      엑셀 생성 후 노란색 셀만 직접 입력하면 됩니다.<br>
+      · 현재 주 전체 출고량 · 판매처별 출고량 6개 · 반품 1위 상품 출고량<br>
+      · 이전 주 출고량 · 이전 주 반품 개수 · 이전 주 교환 개수
+    </div>
+    <div class="actions">
+      <button id="downloadBtn" class="primary">완성본 엑셀 다운로드</button>
+    </div>
+    <div id="saveReady" class="save-ready">
+      <strong>자동 다운로드가 시작되지 않았다면 아래 버튼으로 다시 저장할 수 있습니다.</strong>
+      <a id="saveLink" class="save-link" href="#">엑셀 파일 다시 저장하기</a>
+      <div class="save-help">Chrome/Edge에서는 저장 위치 선택창 또는 자동 다운로드가 바로 실행됩니다. 아래 버튼은 브라우저가 자동 저장을 막았을 때 사용하는 예비 저장 버튼입니다.</div>
+    </div>
+  </div>
+
+  <div class="footer">※ CSV는 브라우저 안에서만 읽습니다. “완성본 엑셀 다운로드”를 누르면 바로 저장을 시도하며, 실패 시 예비 저장 버튼이 표시됩니다. ExcelJS CDN 사용을 위해 인터넷 연결이 필요합니다. · v5</div>
+  </section>
+</div>
+
+<script>
+'use strict';
+
+const REQUIRED = ['CS일련번호','CS유형이름','CS종류명','메모','판매처명','판매처주문번호','공급처명','판매처상품명','상품옵션'];
+const MANUAL_FILL = 'FFFF00';
+const THEME_GRAY = 'E7E6E6';
+const LIGHT_GRAY = 'F2F2F2';
+const PEACH_FILL = 'FCE4D6';
+const BORDER = '000000';
+const CHANNELS = ['퀸잇','네이버','GS SHOP','롯데ON','비플로우','하프클럽'];
+const REASON_ORDER = ['사이즈 불만','단순반품','기타 불량','기타 불만','단순교환','외형 불만','사이즈 불량','오배송'];
+const COLORS = ['연청','진청','중청','그레이','흑청','빈티지진청','샌드중청','소프트연청','차콜(먹색)','차콜','블랙','검정','화이트','아이보리','아이보리(베이지)','베이지','연베이지','진베이지','라이트블루','블루','인디고','그레이시진청','그레이시연청','카키','연카키','연그레이','아이스연청','스카이연청','스카이','브라운','딥브라운','딥카키','빈티지중청','빈티지연청','핑크','퍼플','옐로우','멜란지','네이비','먹색','먹색(차콜)','코코아'];
+const SIZES = ['3XL','2XL','XL','F1','F2','F3','L','M','S'];
+const KNOWN_SUPPLIER_MAP = {"노컷슬랙스19탄":"(주)아도라블","올데이슬랙스19탄":"(주)아도라블","J2441":"(주)진머니","J2548":"(주)진머니","P2523":"(주)진머니","또입진15탄":"(주)진머니","올데이슬랙스21탄":"(주)진머니","찐코튼19탄":"(주)진머니","찐코튼41탄":"(주)진머니","J2524":"(주)케이디지","J2617":"(주)케이디지","J2628":"(주)케이디지","J2636":"(주)케이디지","MJ2511":"(주)케이디지","P2410":"(주)케이디지","S021401":"(주)케이디지","SK2504":"(주)케이디지","가을찐스판2탄":"(주)케이디지","노컷진1탄":"(주)케이디지","노컷진30탄":"(주)케이디지","노컷진3탄":"(주)케이디지","노컷진43탄":"(주)케이디지","노컷진47탄":"(주)케이디지","노컷진4탄":"(주)케이디지","노컷진5탄":"(주)케이디지","노컷진76탄":"(주)케이디지","노컷진84탄":"(주)케이디지","노컷진맨즈2탄":"(주)케이디지","노컷진맨즈3탄":"(주)케이디지","라이크라1탄":"(주)케이디지","여름노컷진11탄":"(주)케이디지","여름노컷진13탄":"(주)케이디지","여름노컷진14탄":"(주)케이디지","여름노컷진1탄":"(주)케이디지","여름노컷진7탄":"(주)케이디지","여름노컷진8탄":"(주)케이디지","여름노컷진9탄":"(주)케이디지","여름찐스판13탄":"(주)케이디지","여름찐스판2탄":"(주)케이디지","여름찐스판5탄":"(주)케이디지","찐스판20탄":"(주)케이디지","텐셀진맨즈2탄":"(주)케이디지","S248":"(주)필앤마조","올데이슬랙스15탄":"(주)필앤마조","J2525":"PEPPY HOLIC","냉장고바지19탄":"W모델","J100501":"계란 속 노른자","J2603":"계란 속 노른자","J2634":"계란 속 노른자","P030701":"계란 속 노른자","P2550":"계란 속 노른자","P2602":"계란 속 노른자","P2651":"계란 속 노른자","P2674":"계란 속 노른자","S244":"계란 속 노른자","SK2608":"계란 속 노른자","노컷진15탄":"계란 속 노른자","노컷진38탄":"계란 속 노른자","노컷진77탄":"계란 속 노른자","또입진20탄":"계란 속 노른자","또입진23탄":"계란 속 노른자","J2514":"뉴행","J2515":"뉴행","J2608":"뉴행","J2612":"뉴행","J2622":"뉴행","J2629":"뉴행","J2632":"뉴행","P2611":"뉴행","P2612":"뉴행","노컷슬랙스6탄":"뉴행","노컷진49탄":"뉴행","노컷진69탄":"뉴행","또입진18탄":"뉴행","여름노컷진18탄":"뉴행","찐코튼43탄":"뉴행","여름올데이슬랙스12탄":"대경어패럴","냉장고바지15탄":"더샵","냉장고바지4탄":"더샵","냉장고바지6탄":"더샵","냉장고바지18탄":"도비((주)리코리치)","노컷슬랙스24탄":"라온","여름노컷슬랙스5탄":"라온","J2627":"루나앤솔","노컷진2탄":"루나앤솔","노컷진8탄":"루나앤솔","찐코튼3탄":"루나앤솔","J2509":"리마인드((주)디투어패럴)","J2520":"리마인드((주)디투어패럴)","J2605":"리마인드((주)디투어패럴)","J2607":"리마인드((주)디투어패럴)","노컷슬랙스12탄":"리마인드((주)디투어패럴)","노컷슬랙스16탄":"리마인드((주)디투어패럴)","노컷진56탄":"리마인드((주)디투어패럴)","노컷진66탄":"리마인드((주)디투어패럴)","노컷진89탄":"리마인드((주)디투어패럴)","노컷진90탄":"리마인드((주)디투어패럴)","또입진6탄":"리마인드((주)디투어패럴)","여름노컷진16탄":"리마인드((주)디투어패럴)","여름노컷진17탄":"리마인드((주)디투어패럴)","여름찐코튼17탄":"리마인드((주)디투어패럴)","올데이슬랙스3탄":"리마인드((주)디투어패럴)","찐코튼23탄":"리마인드((주)디투어패럴)","찐코튼9탄":"리마인드((주)디투어패럴)","MS2509":"리자드스탠다드","P2666":"리자드스탠다드","P2667":"리자드스탠다드","P2673":"리자드스탠다드","SK2503":"리자드스탠다드","SK2507":"리자드스탠다드","노컷슬랙스13탄":"리자드스탠다드","노컷슬랙스20탄":"리자드스탠다드","노컷슬랙스23탄":"리자드스탠다드","노컷슬랙스25탄":"리자드스탠다드","노컷슬랙스5탄":"리자드스탠다드","노컷슬랙스8탄":"리자드스탠다드","노컷슬랙스9탄":"리자드스탠다드","여름노컷슬랙스1탄":"리자드스탠다드","여름찐코튼11탄":"리자드스탠다드","여름찐코튼12탄":"리자드스탠다드","여름찐코튼13탄":"리자드스탠다드","여름찐코튼14탄":"리자드스탠다드","여름찐코튼15탄":"리자드스탠다드","여름찐코튼1탄":"리자드스탠다드","여름찐코튼2탄":"리자드스탠다드","올데이팬츠14탄":"리자드스탠다드","올데이팬츠1탄":"리자드스탠다드","찐코튼10탄":"리자드스탠다드","찐코튼12탄":"리자드스탠다드","찐코튼15탄":"리자드스탠다드","찐코튼24탄":"리자드스탠다드","찐코튼30탄":"리자드스탠다드","찐코튼35탄":"리자드스탠다드","찐코튼37탄":"리자드스탠다드","찐코튼4탄":"리자드스탠다드","찐코튼6탄":"리자드스탠다드","S2602":"메이원","여름올데이슬랙스3탄":"메이원","S2608":"멜로디","여름노컷슬랙스6탄":"미즈","T051202":"빅토리(쭈쭈바)","J2519":"시나브로","가을찐스판1탄":"시나브로","여름찐스판1탄":"시나브로","찐스판10탄":"시나브로","찐스판12탄":"시나브로","찐스판17탄":"시나브로","찐스판5탄":"시나브로","찐스판6탄":"시나브로","찐스판7탄":"시나브로","MJ2514":"신안어패럴","MJ2606":"신안어패럴","MJ2613":"신안어패럴","MJ2614":"신안어패럴","MJ2620":"신안어패럴","MP2632":"신안어패럴","SK2602":"신안어패럴","노컷진86탄":"신안어패럴","노컷진맨즈5탄":"신안어패럴","또입진맨즈2탄":"신안어패럴","찐스판15탄":"신안어패럴","S2601":"에이플러스","P2657":"엔블랙","MP2603":"오드오즈","P2631":"유프","MS2517":"주연","MS2602":"주연","아이스텍 냉감팬츠 2SET":"중국생산","찐코튼11탄":"중국생산","냉장고바지9탄":"파라또","냉장고바지맨즈2탄":"프라임","올데이슬랙스24탄":"헤이제인"};
+
+let analyzed = null;
+
+const $ = id => document.getElementById(id);
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function parseLocalDate(s){
+  if(!s) return null;
+  const [y,m,d]=s.split('-').map(Number);
+  return new Date(y,m-1,d);
+}
+function fmtYMD(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function fmtMD(d){ return `${pad(d.getMonth()+1)}/${pad(d.getDate())}`; }
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function weekLabel(d){ return `${d.getMonth()+1}월 ${Math.ceil(d.getDate()/7)}주차`; }
+function updateWeek(){ const d=parseLocalDate($('reportDate').value); $('weekPreview').value=d?weekLabel(d):''; }
+function setDefaults(){
+  const today=new Date();
+  $('reportDate').value=fmtYMD(today);
+  $('csEnd').value=fmtYMD(addDays(today,-1));
+  $('csStart').value=fmtYMD(addDays(today,-7));
+  $('shipEnd').value=fmtYMD(addDays(today,-4));
+  $('shipStart').value=fmtYMD(addDays(today,-10));
+  updateWeek();
+}
+function showStatus(msg,type='ok'){
+  const el=$('status'); el.textContent=msg; el.className=`status ${type}`;
+}
+function clearStatus(){ const el=$('status'); el.textContent=''; el.className='status'; }
+
+async function decodeFile(file){
+  const buf=await file.arrayBuffer();
+  try { return new TextDecoder('utf-8',{fatal:true}).decode(buf); }
+  catch(e){ return new TextDecoder('euc-kr').decode(buf); }
+}
+
+function parseCSV(text){
+  const rows=[]; let row=[]; let field=''; let quoted=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(quoted){
+      if(ch==='"'){
+        if(text[i+1]==='"'){ field+='"'; i++; }
+        else quoted=false;
+      } else field+=ch;
+    } else {
+      if(ch==='"') quoted=true;
+      else if(ch===','){ row.push(field); field=''; }
+      else if(ch==='\n'){ row.push(field.replace(/\r$/,'')); rows.push(row); row=[]; field=''; }
+      else field+=ch;
+    }
+  }
+  if(field.length || row.length){ row.push(field.replace(/\r$/,'')); rows.push(row); }
+  while(rows.length && rows[rows.length-1].every(v=>String(v).trim()==='')) rows.pop();
+  return rows;
+}
+
+function cleanExcelText(v){
+  let s=String(v??'').trim();
+  const m=s.match(/^="([\s\S]*)"$/);
+  if(m) s=m[1];
+  else if(/^=/.test(s)) s=s.slice(1).replace(/^"|"$/g,'');
+  return s.trim();
+}
+function mapRow(headers,row){
+  const o={}; headers.forEach((h,i)=>o[String(h).trim()]=cleanExcelText(row[i]??'')); return o;
+}
+function specialExchangeMarker(s){ return /\[\s*GS\s*[\.,]\s*퀸잇\s*[\.,]\s*브리치교환\s*\]/i.test(s||''); }
+function removeSpecialMarker(s){ return String(s||'').replace(/\[\s*GS\s*[\.,]\s*퀸잇\s*[\.,]\s*브리치교환\s*\]/ig,'').trim(); }
+
+function normalizeReason(raw, finalType){
+  let s=removeSpecialMarker(raw).trim();
+  if(!s) return finalType==='교환'?'단순교환':'단순반품';
+  const compact=s.replace(/\s+/g,'');
+  const map={
+    '단순반품':'단순반품','단순교환':'단순교환','사이즈불만':'사이즈 불만','외형불만':'외형 불만',
+    '기타불만':'기타 불만','사이즈불량':'사이즈 불량','기타불량':'기타 불량','오배송':'오배송'
+  };
+  return map[compact] || s.replace(/\s+/g,' ').trim();
+}
+
+function cleanReturnMemo(raw){
+  let s=String(raw||'');
+  const idx=s.indexOf('[반품정보]');
+  if(idx>=0) s=s.slice(0,idx);
+  return s.trim();
+}
+function cleanExchangeMemo(raw){
+  let s=String(raw||'');
+  const a=s.indexOf('「'), b=s.indexOf('」',a+1);
+  if(a>=0 && b>a) return s.slice(a+1,b).trim();
+  const idx=s.indexOf('[반품정보]');
+  if(idx>=0) s=s.slice(0,idx);
+  return s.trim();
+}
+function normalizeChannel(raw){
+  const s=String(raw||'').trim();
+  if(s.includes('네이버')) return '네이버';
+  if(s.includes('카카오')) return '카카오';
+  return s;
+}
+function normalizeProduct(raw, rawOption=''){
+  let s=String(raw||'').trim();
+  s=s.replace(/\(\s*5부\s*\/\s*7부\s*\)/gi,' ')
+     .replace(/\(\s*\d+\s*color\s*\)/gi,' ')
+     .replace(/\[\s*GS단독\s*\]/gi,' ')
+     .replace(/\(\s*단독\s*\)/gi,' ')
+     .trim();
+
+  // 판매처상품명 안에 괄호 상품명이 있으면 기존 방식대로 사용
+  const matches=[...s.matchAll(/\(([^()]+)\)/g)].map(m=>m[1].trim()).filter(Boolean);
+  if(matches.length){
+    const preferred=matches.find(v=>/탄|^[A-Za-z]{1,4}\d{3,}$/i.test(v));
+    return preferred || matches[0];
+  }
+
+  // 카카오 기획전처럼 판매처상품명이 일반 배너명인 경우,
+  // 상품옵션의 괄호 안 실제 상품명(예: 가을찐스판1탄)을 사용
+  const option=String(rawOption||'');
+  const optionMatches=[...option.matchAll(/\(([^()]+)\)/g)].map(m=>m[1].trim()).filter(Boolean);
+  const optionProduct=optionMatches.find(v=>/탄|^[A-Za-z]{1,4}\d{3,}$/i.test(v));
+  if(optionProduct) return optionProduct;
+
+  return s;
+}
+function normalizeOption(raw){
+  let txt=String(raw||'');
+  if(!txt) return '';
+  txt=txt.replace(/사이즈|색상|컬러|기장/g,'')
+         .replace(/[,\.\s\/:()]/g,'');
+  for(const c of COLORS){
+    const p=txt.indexOf(c);
+    if(p>=0){ txt=txt.slice(p); break; }
+  }
+  const under=txt.indexOf('_'); if(under>=0) txt=txt.slice(0,under);
+  txt=txt.replace(/숏/g,'/숏/').replace(/기본/g,'/기본/').replace(/롱/g,'/롱/');
+  if(!/숏|기본|롱/.test(txt)){
+    for(const sz of SIZES){
+      const p=txt.indexOf(sz);
+      if(p>0){ txt=txt.slice(0,p)+'/'+txt.slice(p); break; }
+    }
+  }
+  for(const sz of SIZES){
+    const p=txt.indexOf(sz);
+    if(p>=0){
+      if(!txt.endsWith(sz)){
+        txt=txt.slice(0,p)+txt.slice(p+sz.length);
+        txt=txt.replace(/\/\//g,'/');
+        txt=txt.replace(/^\/+|\/+$/g,'');
+        txt=txt+'/'+sz;
+      }
+      break;
+    }
+  }
+  txt=txt.replace(/\/\//g,'/').replace(/^\/+|\/+$/g,'');
+  return txt;
+}
+
+function processRaw(o){
+  const rawType=String(o['CS유형이름']||'').trim();
+  const rawReason=String(o['CS종류명']||'').trim();
+  const isSpecial=specialExchangeMarker(rawReason);
+  let finalType='';
+  if(/^03\./.test(rawType)) finalType='교환';
+  else if(/^04\./.test(rawType)) finalType='교환';
+  else if(/^06\./.test(rawType)) finalType=isSpecial?'교환':'반품';
+  else return null;
+
+  const reason=normalizeReason(rawReason,finalType);
+  let memo=(/^03\./.test(rawType)||/^04\./.test(rawType)) ? cleanExchangeMemo(o['메모']) : cleanReturnMemo(o['메모']);
+  if(!memo) memo=finalType==='교환'?'단순교환':'단순반품';
+
+  return {
+    serial:cleanExcelText(o['CS일련번호']),
+    type:finalType,
+    channel:normalizeChannel(o['판매처명']),
+    supplier:String(o['공급처명']||'').trim(),
+    product:normalizeProduct(o['판매처상품명'],o['상품옵션']),
+    option:normalizeOption(o['상품옵션']),
+    reason,
+    memo,
+    orderNo:cleanExcelText(o['판매처주문번호']),
+    rawType, rawReason
+  };
+}
+
+function countBy(arr,keyFn){
+  const m=new Map();
+  for(const x of arr){ const k=keyFn(x); if(!k) continue; m.set(k,(m.get(k)||0)+1); }
+  return m;
+}
+function sortedMapEntries(map){ return [...map.entries()].sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0],'ko')); }
+
+function isPlaceholderSupplier(v){
+  return String(v||'').replace(/\s+/g,'')==='포레스트핏협력사';
+}
+function repairPlaceholderSuppliers(records){
+  // 같은 상품의 정상 공급처가 있으면 가장 많이 등장한 공급처로 치환
+  const votes=new Map();
+  for(const rec of records){
+    if(!rec.product || !rec.supplier || isPlaceholderSupplier(rec.supplier)) continue;
+    if(!votes.has(rec.product)) votes.set(rec.product,new Map());
+    const m=votes.get(rec.product);
+    m.set(rec.supplier,(m.get(rec.supplier)||0)+1);
+  }
+  let repaired=0, unresolved=0;
+  for(const rec of records){
+    if(!isPlaceholderSupplier(rec.supplier)) continue;
+    const m=votes.get(rec.product);
+    if(m && m.size){
+      rec.supplier=[...m.entries()].sort((a,b)=>b[1]-a[1] || a[0].localeCompare(b[0],'ko'))[0][0];
+      repaired++;
+    }else if(KNOWN_SUPPLIER_MAP[rec.product]){
+      // 기존 완성본에서 확인된 상품-공급처 매핑을 보조 사전으로 사용
+      rec.supplier=KNOWN_SUPPLIER_MAP[rec.product];
+      repaired++;
+    }else{
+      // 잘못된 '포레스트핏 협력사' 문구는 최종 파일에 남기지 않음
+      rec.supplier='';
+      unresolved++;
+    }
+  }
+  return {repaired,unresolved};
+}
+
+function classifyDetail(reason,memo){
+  const t=String(memo||'').replace(/\s+/g,' ');
+  const sizeReason=/사이즈/.test(reason||'');
+  if(sizeReason){
+    if(/기장|길이|길어요|길다|너무길|숏인데/.test(t)) return '기장이 김';
+    if(/짧아요|짧다|기장이 짧|길이가 짧/.test(t)) return '기장이 짧음';
+    if(/바지통|통이|통도|통넓|통 넓|허벅지.*넓|와이드.*심|폭이.*넓|어벙벙/.test(t)) return '통이 큼';
+    if(/크네요|너무 크|많이크|사이즈.*크|싸이즈.*크|허리.*크/.test(t)) return '사이즈가 큼';
+    if(/작네요|너무 작|사이즈.*작|싸이즈.*작|허리.*작/.test(t)) return '사이즈가 작음';
+    if(/밑위/.test(t)) return '밑위 관련';
+    return '기타 의견';
+  }
+  if(/밑위/.test(t)) return '밑위가 김';
+  if(/두껍|도톰|뻣뻣|빡빡|따가|원단|재질|소재|질감|무겁|해비/.test(t)) return '재질 불만족';
+  if(/냄새|악취/.test(t)) return '냄새 관련';
+  if(/색상|색깔|컬러|화면.*다르/.test(t)) return '색상 관련';
+  if(/핏|디자인|스타일|안어울|안 어울|뚱뚱|안이쁨|안예쁨|실루엣|와이드핏/.test(t)) return '디자인 관련';
+  if(/봉제|박음|바느질|지퍼|단추|마감|오염|택|라벨/.test(t)) return '봉제·마감 관련';
+  if(reason==='오배송') return '오배송';
+  return '기타 의견';
+}
+
+function styleBorder(cell){ cell.border={top:{style:'thin',color:{argb:BORDER}},left:{style:'thin',color:{argb:BORDER}},bottom:{style:'thin',color:{argb:BORDER}},right:{style:'thin',color:{argb:BORDER}}}; }
+function styleHeader(cell,dark=false){
+  cell.font={name:'맑은 고딕',size:10,bold:true,color:{argb:'FF000000'}};
+  cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:THEME_GRAY}};
+  cell.alignment={vertical:'middle',horizontal:'center',wrapText:true}; styleBorder(cell);
+}
+function styleLightHeader(cell){
+  cell.font={name:'맑은 고딕',size:10,bold:true,color:{argb:'FF000000'}};
+  cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:LIGHT_GRAY}};
+  cell.alignment={vertical:'middle',horizontal:'center',wrapText:true}; styleBorder(cell);
+}
+function stylePeachHeader(cell){
+  cell.font={name:'맑은 고딕',size:10,bold:true,color:{argb:'FF000000'}};
+  cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:PEACH_FILL}};
+  cell.alignment={vertical:'middle',horizontal:'center',wrapText:true}; styleBorder(cell);
+}
+function styleBody(cell,center=false){
+  cell.font={name:'맑은 고딕',size:10,color:{argb:'FF000000'}};
+  cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFFFFF'}};
+  cell.alignment={vertical:'middle',horizontal:'center',wrapText:true}; styleBorder(cell);
+}
+const manualCfPriority=new WeakMap();
+function manualCell(ws,cell){
+  cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFFFFF'}};
+  styleBorder(cell);
+  const addr=cell.address.replace(/\$/g,'');
+  const next=(manualCfPriority.get(ws)||0)+1;
+  manualCfPriority.set(ws,next);
+  ws.addConditionalFormatting({
+    ref:addr,
+    rules:[{
+      type:'expression',
+      priority:next,
+      formulae:[`LEN(TRIM(${addr}&""))=0`],
+      style:{fill:{type:'pattern',pattern:'solid',fgColor:{argb:MANUAL_FILL},bgColor:{argb:MANUAL_FILL}}}
+    }]
+  });
+}
+function percentCell(cell){ cell.numFmt='0.00%'; }
+function copyRowStyle(ws,from,to,startCol,endCol){
+  for(let c=startCol;c<=endCol;c++){
+    const a=ws.getCell(from,c), b=ws.getCell(to,c);
+    b.style=JSON.parse(JSON.stringify(a.style||{}));
+  }
+}
+function safeSheetName(name){ return String(name||'상세분석').replace(/[\\\/?*\[\]:]/g,' ').slice(0,31) || '상세분석'; }
+
+function makeWorkbook(data){
+  const wb=new ExcelJS.Workbook();
+  wb.creator='FOREST FIT 경영지원팀';
+  wb.created=new Date();
+  wb.modified=new Date();
+  wb.calcProperties.fullCalcOnLoad=true;
+  wb.calcProperties.forceFullCalc=true;
+
+  buildStatsSheet(wb,data);
+  buildDetailSheet(wb,data);
+  buildListSheet(wb,data);
+  buildWrongDeliverySheet(wb,data);
+  return wb;
+}
+
+function buildStatsSheet(wb,data){
+  const ws=wb.addWorksheet('통계',{views:[{showGridLines:false}]});
+  ws.columns=[
+    {width:20.25},{width:4.75},{width:5.625},{width:18.75},{width:4.75},{width:5.625},{width:15},{width:10},{width:5},{width:15},{width:10}
+  ];
+
+  const allCounts=sortedMapEntries(countBy(data.records,x=>x.product));
+  const half=Math.ceil(allCounts.length/2);
+  ws.getCell('A2').value='상품명'; ws.getCell('B2').value='개수'; ws.getCell('D2').value='상품명'; ws.getCell('E2').value='개수';
+  ['A2','B2','D2','E2'].forEach(a=>styleHeader(ws.getCell(a)));
+  for(let i=0;i<half;i++){
+    const [p,c]=allCounts[i]||['',null]; ws.getCell(3+i,1).value=p; ws.getCell(3+i,2).value=c; styleBody(ws.getCell(3+i,1)); styleBody(ws.getCell(3+i,2),true);
+    const r=allCounts[i+half]; if(r){ ws.getCell(3+i,4).value=r[0]; ws.getCell(3+i,5).value=r[1]; styleBody(ws.getCell(3+i,4)); styleBody(ws.getCell(3+i,5),true); }
+  }
+  const totalRow=3+half;
+  ws.getCell(totalRow,4).value='총합계'; ws.getCell(totalRow,5).value=data.records.length; styleHeader(ws.getCell(totalRow,4)); styleHeader(ws.getCell(totalRow,5));
+
+  const reportDate=parseLocalDate(data.reportDate);
+  const prevReport=addDays(reportDate,-7);
+  const currentWeek=weekLabel(reportDate), prevWeek=weekLabel(prevReport);
+  ws.getCell('G2').value=currentWeek; ws.mergeCells('G2:H2'); styleHeader(ws.getCell('G2'),true);
+  ws.getCell('J2').value=prevWeek; ws.mergeCells('J2:K2'); styleHeader(ws.getCell('J2'),true);
+
+  const labels=['출고량','반품 개수','교환 개수','출고량 대비 반품률','출고량 대비 교환률'];
+  labels.forEach((v,i)=>{ ws.getCell(3+i,7).value=v; ws.getCell(3+i,10).value=v; styleLightHeader(ws.getCell(3+i,7)); styleLightHeader(ws.getCell(3+i,10)); });
+  manualCell(ws,ws.getCell('H3')); manualCell(ws,ws.getCell('K3')); manualCell(ws,ws.getCell('K4')); manualCell(ws,ws.getCell('K5'));
+  ws.getCell('H4').value=data.returnCount; ws.getCell('H5').value=data.exchangeCount;
+  styleBody(ws.getCell('H4'),true); styleBody(ws.getCell('H5'),true);
+  ws.getCell('H6').value={formula:'IFERROR(H4/H3,0)',result:0}; ws.getCell('H7').value={formula:'IFERROR(H5/H3,0)',result:0};
+  ws.getCell('K6').value={formula:'IFERROR(K4/K3,0)',result:0}; ws.getCell('K7').value={formula:'IFERROR(K5/K3,0)',result:0};
+  ['H6','H7','K6','K7'].forEach(a=>{styleBody(ws.getCell(a),true);percentCell(ws.getCell(a));});
+  ['H3','K3','K4','K5'].forEach(a=>ws.getCell(a).alignment={vertical:'middle',horizontal:'center'});
+
+  const csS=parseLocalDate(data.csStart), csE=parseLocalDate(data.csEnd), shS=parseLocalDate(data.shipStart), shE=parseLocalDate(data.shipEnd);
+  const prevCsS=addDays(csS,-7), prevCsE=addDays(csE,-7), prevShS=addDays(shS,-7), prevShE=addDays(shE,-7);
+  ws.getCell('G8').value=`*출고량 : ${fmtMD(shS)}~${fmtMD(shE)}\n*반품/교환 건수 : ${fmtMD(csS)}~${fmtMD(csE)}`;
+  ws.mergeCells('G8:H8'); ws.getCell('G8').alignment={wrapText:true,vertical:'middle'}; ws.getCell('G8').font={name:'맑은 고딕',size:9,color:{argb:'FF666666'}};
+  ws.getCell('J8').value=`*출고량 : ${fmtMD(prevShS)}~${fmtMD(prevShE)}\n*반품/교환 건수 : ${fmtMD(prevCsS)}~${fmtMD(prevCsE)}`;
+  ws.mergeCells('J8:K8'); ws.getCell('J8').alignment={wrapText:true,vertical:'middle'}; ws.getCell('J8').font={name:'맑은 고딕',size:9,color:{argb:'FF666666'}};
+  ws.getRow(8).height=34;
+
+  let r=11;
+  ws.getCell(r,7).value='CS 사유별 교환·반품 건수 집계'; ws.mergeCells(r,7,r,8); styleHeader(ws.getCell(r,7),true); r++;
+  ws.getCell(r,7).value='CS종류명'; ws.getCell(r,8).value='개수'; styleLightHeader(ws.getCell(r,7)); styleLightHeader(ws.getCell(r,8)); r++;
+  const reasonMap=countBy(data.records,x=>x.reason);
+  const extra=[...reasonMap.keys()].filter(k=>!REASON_ORDER.includes(k)).sort((a,b)=>a.localeCompare(b,'ko'));
+  const reasons=[...REASON_ORDER,...extra].filter(k=>reasonMap.has(k));
+  reasons.forEach(reason=>{ ws.getCell(r,7).value=reason; ws.getCell(r,8).value=reasonMap.get(reason); styleBody(ws.getCell(r,7)); styleBody(ws.getCell(r,8),true); r++; });
+  ws.getCell(r,7).value='총합계'; ws.getCell(r,8).value=data.records.length; styleHeader(ws.getCell(r,7)); styleHeader(ws.getCell(r,8)); r+=3;
+
+  ws.getCell(r,7).value='판매처별 반품률 통계'; ws.mergeCells(r,7,r,10); styleHeader(ws.getCell(r,7),true); r++;
+  ['판매처','출고량','개수','반품률'].forEach((v,i)=>{ws.getCell(r,7+i).value=v;styleLightHeader(ws.getCell(r,7+i));}); r++;
+  const chReturn=countBy(data.returns,x=>x.channel);
+  const channelStart=r;
+  CHANNELS.forEach(ch=>{
+    ws.getCell(r,7).value=ch; styleBody(ws.getCell(r,7));
+    manualCell(ws,ws.getCell(r,8)); ws.getCell(r,8).alignment={vertical:'middle',horizontal:'center'};
+    ws.getCell(r,9).value=chReturn.get(ch)||0; styleBody(ws.getCell(r,9),true);
+    ws.getCell(r,10).value={formula:`IFERROR(I${r}/H${r},0)`,result:0}; styleBody(ws.getCell(r,10),true); percentCell(ws.getCell(r,10)); r++;
+  });
+  ws.getCell(r,7).value='총합계'; styleHeader(ws.getCell(r,7));
+  ws.getCell(r,8).value={formula:`SUM(H${channelStart}:H${r-1})`,result:0}; styleHeader(ws.getCell(r,8));
+  ws.getCell(r,9).value=CHANNELS.reduce((s,ch)=>s+(chReturn.get(ch)||0),0); styleHeader(ws.getCell(r,9));
+  ws.getCell(r,10).value={formula:`IFERROR(I${r}/H${r},0)`,result:0}; styleHeader(ws.getCell(r,10)); percentCell(ws.getCell(r,10)); r+=3;
+
+  ws.getCell(r,7).value='판매처별 반품 상위 상품'; ws.mergeCells(r,7,r,10); styleHeader(ws.getCell(r,7),true); r++;
+  const topOrder=['GS SHOP','퀸잇','비플로우','하프클럽','네이버','롯데ON'];
+  for(const ch of topOrder){
+    // 마지막 표: 판매처 제목은 G:I 병합, 상품명은 H:I 병합
+    ws.getCell(r,7).value=ch; ws.mergeCells(r,7,r,9); styleLightHeader(ws.getCell(r,7)); ws.getCell(r,10).value='상품별 반품 개수'; styleLightHeader(ws.getCell(r,10)); r++;
+    const top=sortedMapEntries(countBy(data.returns.filter(x=>x.channel===ch),x=>x.product)).slice(0,3);
+    top.forEach(([p,c],i)=>{
+      ws.getCell(r,7).value=i+1; ws.getCell(r,8).value=p; ws.mergeCells(r,8,r,9); ws.getCell(r,10).value=c;
+      styleBody(ws.getCell(r,7),true); styleBody(ws.getCell(r,8)); styleBody(ws.getCell(r,10),true); r++;
+    });
+    if(top.length===0){ ws.getCell(r,8).value='데이터 없음'; ws.mergeCells(r,8,r,9); styleBody(ws.getCell(r,8)); r++; }
+  }
+
+  // 통계 시트는 틀고정 없이 표시
+  ws.views=[{showGridLines:false}];
+  ws.pageSetup={orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:0.3,right:0.3,top:0.5,bottom:0.5,header:0.2,footer:0.2}};
+}
+
+function buildDetailSheet(wb,data){
+  const name=safeSheetName(data.topProduct);
+  const ws=wb.addWorksheet(name,{views:[{showGridLines:false}]});
+  ws.columns=[{width:9},{width:10},{width:14},{width:14},{width:11},{width:16},{width:80}];
+  ws.mergeCells('B2:G2'); ws.getCell('B2').value=`[${data.topProduct}] 반품 사유 및 반품률`;
+  ws.getCell('B2').font={name:'맑은 고딕',size:20,bold:true,color:{argb:'FF000000'}};
+  ws.getCell('B2').alignment={vertical:'middle',horizontal:'left'}; ws.getRow(2).height=30;
+  ws.mergeCells('B3:D3'); ws.getCell('B3').value='전체 반품률 통계'; stylePeachHeader(ws.getCell('B3'));
+  ['전체 출고량','전체 반품 건수','전체 반품률'].forEach((v,i)=>{ws.getCell(4,2+i).value=v;styleLightHeader(ws.getCell(4,2+i));});
+  manualCell(ws,ws.getCell('B5')); ws.getCell('B5').alignment={vertical:'middle',horizontal:'center'};
+  ws.getCell('C5').value=data.topReturnCount; styleBody(ws.getCell('C5'),true);
+  ws.getCell('D5').value={formula:'IFERROR(C5/B5,0)',result:0}; styleBody(ws.getCell('D5'),true); percentCell(ws.getCell('D5'));
+
+  const headers=['순위','CS종류명','반품 건수','반품 비율','CS유형','고객 피드백'];
+  headers.forEach((v,i)=>{ws.getCell(7,2+i).value=v;stylePeachHeader(ws.getCell(7,2+i));});
+  let row=8;
+  const rows=data.returns.filter(x=>x.product===data.topProduct);
+  const reasonEntries=sortedMapEntries(countBy(rows,x=>x.reason)).slice(0,2);
+  reasonEntries.forEach(([reason,count],idx)=>{
+    const reasonRows=rows.filter(x=>x.reason===reason);
+    const groups=new Map();
+    for(const rec of reasonRows){
+      const sub=classifyDetail(reason,rec.memo);
+      if(!groups.has(sub)) groups.set(sub,[]);
+      groups.get(sub).push(rec.memo);
+    }
+    const groupEntries=[...groups.entries()];
+    const reasonStart=row;
+    for(const [sub,comments] of groupEntries){
+      const subStart=row;
+      for(const memo of comments){
+        ws.getCell(row,7).value=memo; styleBody(ws.getCell(row,7)); ws.getRow(row).height=20;
+        row++;
+      }
+      if(comments.length===0){ ws.getCell(row,7).value=''; styleBody(ws.getCell(row,7)); row++; }
+      const subEnd=row-1;
+      ws.getCell(subStart,6).value=sub; styleBody(ws.getCell(subStart,6),true);
+      if(subEnd>subStart){ ws.mergeCells(subStart,6,subEnd,6); ws.getCell(subStart,6).alignment={vertical:'middle',horizontal:'center',wrapText:true}; }
+    }
+    const reasonEnd=Math.max(reasonStart,row-1);
+    ws.getCell(reasonStart,2).value=idx+1; ws.getCell(reasonStart,3).value=reason; ws.getCell(reasonStart,4).value=count; ws.getCell(reasonStart,5).value=count/data.topReturnCount;
+    [2,3,4,5].forEach(c=>styleBody(ws.getCell(reasonStart,c),true)); percentCell(ws.getCell(reasonStart,5));
+    if(reasonEnd>reasonStart){
+      for(const c of [2,3,4,5]) ws.mergeCells(reasonStart,c,reasonEnd,c);
+    }
+  });
+  // 반품율 1위 상품 시트: 7행 이후(8행부터) 행 높이 20 고정
+  for(let rr=8; rr<=Math.max(8,row-1); rr++) ws.getRow(rr).height=20;
+  ws.views=[{state:'frozen',ySplit:7,showGridLines:false}];
+  ws.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:0.3,right:0.3,top:0.5,bottom:0.5,header:0.2,footer:0.2}};
+}
+
+function buildListSheet(wb,data){
+  const ws=wb.addWorksheet('반품리스트',{views:[{showGridLines:false}]});
+  ws.columns=[{width:10.625},{width:12},{width:20.75},{width:20.25},{width:21.875},{width:12.25},{width:60.625},{width:28.25}];
+  ws.mergeCells('A1:H1'); ws.getCell('A1').value=`${weekLabel(parseLocalDate(data.reportDate))} 반품리스트`; styleHeader(ws.getCell('A1')); ws.getCell('A1').font={name:'맑은 고딕',size:15,bold:true,color:{argb:'FF000000'}}; ws.getRow(1).height=24;
+  const headers=['CS유형','판매처명','공급처명','판매처상품명','상품옵션','CS종류명','메모','판매처주문번호'];
+  headers.forEach((v,i)=>{ws.getCell(2,i+1).value=v;styleHeader(ws.getCell(2,i+1));});
+  // 실제 업무 순서와 동일하게 2번 정렬: 판매처상품명 오름차순 → 공급처명 오름차순
+  // 두 번째 정렬은 stable sort이므로 최종적으로 공급처명 안에서 상품명이 오름차순으로 유지됨
+  const sorted=[...data.records];
+  sorted.sort((a,b)=>a.product.localeCompare(b.product,'ko'));
+  sorted.sort((a,b)=>a.supplier.localeCompare(b.supplier,'ko'));
+  sorted.forEach((x,i)=>{
+    const r=i+3;
+    const vals=[x.type,x.channel,x.supplier,x.product,x.option,x.reason,x.memo,x.orderNo];
+    vals.forEach((v,c)=>{ws.getCell(r,c+1).value=v;styleBody(ws.getCell(r,c+1),[1,2,6,8].includes(c+1));});
+    ws.getRow(r).height=31;
+    ws.getCell(r,8).numFmt='@';
+  });
+  const last=sorted.length+2;
+  if(last>=3){
+    let startIdx=0;
+    for(let i=1;i<=sorted.length;i++){
+      if(i===sorted.length || sorted[i].supplier!==sorted[startIdx].supplier || sorted[i].product!==sorted[startIdx].product){
+        const r1=startIdx+3, r2=i+2;
+        if(r2>r1) ws.mergeCells(r1,4,r2,4);
+        startIdx=i;
+      }
+    }
+    startIdx=0;
+    for(let i=1;i<=sorted.length;i++){
+      if(i===sorted.length || sorted[i].supplier!==sorted[startIdx].supplier){
+        const r1=startIdx+3, r2=i+2;
+        if(r2>r1) ws.mergeCells(r1,3,r2,3);
+        startIdx=i;
+      }
+    }
+  }
+  ws.autoFilter={from:'A2',to:`H${Math.max(2,last)}`};
+  ws.views=[{state:'frozen',ySplit:2,showGridLines:false}];
+  ws.pageSetup={orientation:'landscape',fitToPage:true,fitToWidth:1,fitToHeight:0,margins:{left:0.2,right:0.2,top:0.4,bottom:0.4,header:0.2,footer:0.2}};
+}
+
+function buildWrongDeliverySheet(wb,data){
+  const ws=wb.addWorksheet('오배송',{views:[{showGridLines:false}]});
+  ws.columns=[{width:18},{width:24},{width:14},{width:90},{width:28}];
+  ws.mergeCells('A1:E1'); ws.getCell('A1').value='[사유 : 오배송] 리스트'; styleHeader(ws.getCell('A1')); ws.getCell('A1').font={name:'맑은 고딕',size:14,bold:true,color:{argb:'FF000000'}};
+  const headers=['판매처상품명','상품옵션','CS종류명','메모','판매처주문번호'];
+  headers.forEach((v,i)=>{ws.getCell(2,i+1).value=v;styleHeader(ws.getCell(2,i+1));});
+  data.wrong.forEach((x,i)=>{
+    const r=i+3, vals=[x.product,x.option,x.reason,x.memo,x.orderNo];
+    vals.forEach((v,c)=>{ws.getCell(r,c+1).value=v;styleBody(ws.getCell(r,c+1),c===2||c===4);});
+    ws.getRow(r).height=32; ws.getCell(r,5).numFmt='@';
+  });
+  ws.views=[{state:'frozen',ySplit:2,showGridLines:false}];
+}
+
+async function analyze(){
+  clearPreparedDownload();
+  clearStatus();
+  if(typeof ExcelJS==='undefined'){ showStatus('Excel 생성 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인해 주세요.','error'); return; }
+  const files=[...$('csvFiles').files];
+  if(files.length<1){ showStatus('CS목록 CSV 파일을 첨부해 주세요.','error'); return; }
+  for(const id of ['reportDate','csStart','csEnd','shipStart','shipEnd']) if(!$(id).value){ showStatus('기간을 모두 설정해 주세요.','error'); return; }
+  $('analyzeBtn').disabled=true; showStatus('CSV를 읽고 분석하는 중입니다...','ok');
+  try{
+    const rawRows=[];
+    for(const file of files){
+      const txt=await decodeFile(file); const rows=parseCSV(txt);
+      if(rows.length<2) continue;
+      const headers=rows[0].map(x=>String(x).replace(/^\uFEFF/,'').trim());
+      const missing=REQUIRED.filter(h=>!headers.includes(h));
+      if(missing.length) throw new Error(`${file.name}: 필수 열 누락 - ${missing.join(', ')}`);
+      for(let i=1;i<rows.length;i++){
+        if(rows[i].every(v=>String(v).trim()==='')) continue;
+        rawRows.push(mapRow(headers,rows[i]));
+      }
+    }
+    const seen=new Set(), records=[]; let dup=0, skipped=0;
+    for(const o of rawRows){
+      const key=cleanExcelText(o['CS일련번호']);
+      if(key && seen.has(key)){ dup++; continue; }
+      if(key) seen.add(key);
+      const p=processRaw(o); if(!p){skipped++; continue;} records.push(p);
+    }
+    const supplierRepair=repairPlaceholderSuppliers(records);
+    const returns=records.filter(x=>x.type==='반품');
+    const exchanges=records.filter(x=>x.type==='교환');
+    const top=sortedMapEntries(countBy(returns,x=>x.product))[0] || ['',0];
+    const wrong=records.filter(x=>x.reason.replace(/\s+/g,'')==='오배송');
+    analyzed={
+      records,returns,exchanges,wrong,dup,skipped,supplierRepair,
+      returnCount:returns.length,exchangeCount:exchanges.length,
+      topProduct:top[0],topReturnCount:top[1],
+      reportDate:$('reportDate').value,csStart:$('csStart').value,csEnd:$('csEnd').value,shipStart:$('shipStart').value,shipEnd:$('shipEnd').value
+    };
+    $('kTotal').textContent=records.length.toLocaleString(); $('kReturn').textContent=returns.length.toLocaleString(); $('kExchange').textContent=exchanges.length.toLocaleString();
+    $('kWrong').textContent=wrong.length.toLocaleString(); $('kDup').textContent=dup.toLocaleString(); $('kSkipped').textContent=skipped.toLocaleString();
+    $('kTopProduct').textContent=top[0]||'-'; $('kTopCount').textContent=top[1].toLocaleString();
+    $('summary').style.display='block';
+    showStatus(`분석 완료 · ${files.length}개 파일 · 반품 ${returns.length.toLocaleString()}건 / 교환 ${exchanges.length.toLocaleString()}건`,'ok');
+  }catch(err){ console.error(err); analyzed=null; $('summary').style.display='none'; showStatus(err.message||String(err),'error'); }
+  finally{$('analyzeBtn').disabled=false;}
+}
+
+let preparedUrl = null;
+let preparedName = '';
+
+function clearPreparedDownload(){
+  if(preparedUrl){
+    try{ URL.revokeObjectURL(preparedUrl); }catch(e){}
+    preparedUrl=null;
+  }
+  preparedName='';
+  $('saveLink').removeAttribute('download');
+  $('saveLink').setAttribute('href','#');
+  $('saveReady').style.display='none';
+}
+
+async function downloadWorkbook(){
+  if(!analyzed){ showStatus('먼저 분석하기를 실행해 주세요.','error'); return; }
+  if(typeof ExcelJS==='undefined'){
+    showStatus('엑셀 생성 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 페이지를 새로고침해 주세요.','error');
+    return;
+  }
+
+  $('downloadBtn').disabled=true;
+  clearPreparedDownload();
+  const d=parseLocalDate(analyzed.reportDate);
+  const fname=`(경영지원팀) ${analyzed.reportDate} ${weekLabel(d)} 반품리스트.xlsx`;
+  let fileHandle=null;
+
+  try{
+    // Chrome/Edge 지원 환경에서는 사용자 클릭 직후 저장 위치를 먼저 확보합니다.
+    // 비동기 엑셀 생성 뒤 다운로드가 차단되는 문제를 피하기 위한 방식입니다.
+    if(typeof window.showSaveFilePicker==='function'){
+      try{
+        fileHandle=await window.showSaveFilePicker({
+          suggestedName:fname,
+          types:[{
+            description:'Excel 통합 문서',
+            accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx']}
+          }]
+        });
+      }catch(pickerErr){
+        if(pickerErr && pickerErr.name==='AbortError'){
+          showStatus('파일 저장이 취소되었습니다.','');
+          return;
+        }
+        console.warn('저장 위치 선택 기능을 사용할 수 없어 일반 다운로드로 전환합니다.', pickerErr);
+        fileHandle=null;
+      }
+    }
+
+    showStatus('엑셀 완성본을 생성하는 중입니다.','ok');
+    const wb=makeWorkbook(analyzed);
+    const buf=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+
+    if(fileHandle){
+      const writable=await fileHandle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      showStatus(`저장 완료 · ${fname}`,'ok');
+      return;
+    }
+
+    // File System Access API 미지원 환경: 브라우저 기본 다운로드를 즉시 실행합니다.
+    preparedUrl=URL.createObjectURL(blob);
+    preparedName=fname;
+    const fallback=$('saveLink');
+    fallback.href=preparedUrl;
+    fallback.download=fname;
+
+    const a=document.createElement('a');
+    a.href=preparedUrl;
+    a.download=fname;
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    // 자동 다운로드가 차단된 경우를 대비해 동일 파일을 다시 받을 수 있는 링크를 유지합니다.
+    $('saveReady').style.display='block';
+    showStatus(`다운로드를 시작했습니다. 자동 저장이 보이지 않으면 아래 '엑셀 파일 다시 저장하기'를 눌러 주세요.`,'ok');
+  }catch(err){
+    console.error(err);
+    showStatus(`엑셀 저장 중 오류: ${err.message||err}`,'error');
+    if(preparedUrl) $('saveReady').style.display='block';
+  }finally{
+    $('downloadBtn').disabled=false;
+  }
+}
+
+const homeView=$('homeView');
+const returnsView=$('returnsView');
+$('openReturnsBtn').addEventListener('click',(e)=>{
+  e.preventDefault();
+  homeView.style.display='none';
+  returnsView.style.display='block';
+  window.scrollTo(0,0);
+});
+$('homeBtn').addEventListener('click',()=>{
+  returnsView.style.display='none';
+  homeView.style.display='block';
+  window.scrollTo(0,0);
+});
+
+$('reportDate').addEventListener('change',updateWeek);
+$('csvFiles').addEventListener('change',()=>{clearPreparedDownload(); $('fileList').innerHTML=[...$('csvFiles').files].map((f,i)=>`${i+1}. ${f.name}`).join('<br>'); analyzed=null; $('summary').style.display='none';});
+$('analyzeBtn').addEventListener('click',analyze);
+$('downloadBtn').addEventListener('click',downloadWorkbook);
+$('resetBtn').addEventListener('click',()=>{ clearPreparedDownload(); $('csvFiles').value=''; $('fileList').innerHTML=''; analyzed=null; $('summary').style.display='none'; clearStatus(); setDefaults(); });
+setDefaults();
+</script>
+</body>
+</html>
