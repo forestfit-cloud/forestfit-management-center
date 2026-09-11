@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>반품리스트 자동화 사이트 v5</title>
+<title>경영지원팀 업무 센터</title>
 <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 <script>
 if(typeof ExcelJS==='undefined'){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"><\/script>');}
@@ -463,6 +463,8 @@ function styleBody(cell,center=false){
 }
 const manualCfPriority=new WeakMap();
 function manualCell(ws,cell){
+  cell.font={name:'맑은 고딕',size:10,color:{argb:'FF000000'}};
+  cell.numFmt='#,##0';
   cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFFFFF'}};
   styleBorder(cell);
   const addr=cell.address.replace(/\$/g,'');
